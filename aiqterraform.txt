@@ -15,6 +15,7 @@ resource "aws_db_instance" "aiq_test" {
   password             = "dbpassword"
   parameter_group_name = "default.postgres13"
   skip_final_snapshot  = true 
+  multi_az             = true
 }
 
 
