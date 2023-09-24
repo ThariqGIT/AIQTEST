@@ -1,0 +1,30 @@
+---
+- name: Create PostgreSQL table and insert sample data
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Include Vault file
+      include_vars: vault.yml
+
+    - name: Create PostgreSQL table
+      become: yes
+      command: >
+        psql -d {{ aiq_test }} -U {{ dbuser }} -c "CREATE TABLE tasks (
+          id serial PRIMARY KEY,
+          title VARCHAR (255),
+          description TEXT,
+          created_at TIMESTAMPTZ DEFAULT NOW()
+        );"
+      environment:
+        PGPASSWORD: "{{ lookup('vars', 'db_password') }}"
+      ignore_errors: yes  
+
+    - name: Insert sample data into the tasks table
+      become: yes
+      command: >
+        psql -d {{ db_name }} -U {{ db_user }} -c "INSERT INTO tasks (title, description) VALUES
+          ('Task 1', 'Description for Task 1'),
+          ('Task 2', 'Description for Task 2'),
+          ('Task 3', 'Description for Task 3');"
+      environment:
+        PGPASSWORD: "{{ lookup('vars', 'db_password') }}"
