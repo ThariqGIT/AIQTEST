@@ -1,0 +1,86 @@
+provider "aws" {
+  region = "me-central-1"  
+}
+
+
+#creating postgress rds db#
+resource "aws_db_instance" "aiq_test" {
+  allocated_storage    = 20   
+  storage_type         = "gp2"  
+  engine               = "postgres"
+  engine_version       = "13.3"  
+  instance_class       = "db.t2.micro"  
+  name                 = "aiq_test"
+  username             = "dbuser"
+  password             = "dbpassword"
+  parameter_group_name = "default.postgres13"
+  skip_final_snapshot  = true 
+}
+
+
+#creating a eks cluster#
+resource "aws_eks_cluster" "aiq_test" {
+  name     = "aiq_test-cluster"
+  role_arn = aws_iam_role.example_cluster.arn
+
+  vpc_config {
+    subnet_ids = ["subnet-uae"]  
+  }
+}
+
+resource "aws_iam_role" "aiq_test_cluster" {
+  name = "eks-cluster-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "eks.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_eks_node_group" "aiq_test_nodes" {
+  cluster_name = aws_eks_cluster.aiq_test_cluster.name
+  node_group_name = "aiq_test-node-group"
+  node_role_arn = aws_iam_role.aiq_test_nodes.arn
+
+  subnet_ids = ["subnet-uae"]  # Replace with your subnet IDs
+
+  scaling_config {
+    desired_size = 2
+    max_size     = 3
+    min_size     = 1
+  }
+
+  remote_access {
+    ec2_ssh_key = "your-ec2-key"
+  }
+}
+
+resource "aws_iam_role" "aiq_test_nodes" {
+  name = "eks-nodes-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+}
+
+output "db_endpoint" {
+  value = aws_db_instance.aiq_test_db.endpoint
+}
+
+output "eks_cluster_endpoint" {
+  value = aws_eks_cluster.aiq_test_cluster.endpoint
+}
+
