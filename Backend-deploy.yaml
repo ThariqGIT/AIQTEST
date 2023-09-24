@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+spec:
+  replicas: 2 # Adjust the number of replicas as needed
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend-container
+          image: backend-app:latest # Use the image name and tag from the Docker build
+          ports:
+            - containerPort: 3001
